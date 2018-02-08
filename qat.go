@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 
+	_ "github.com/denisenkom/go-mssqldb"
 	_ "github.com/lib/pq"
 )
 
@@ -25,36 +26,32 @@ func errorf(format string, args ...interface{}) {
 func main() {
 	// Command line flags.
 	delimiter := flag.String("delimiter", ",", "delimeter")
-	driver := flag.String("driver", "postgres", "sql server driver (can only be postgres currently)")
-	name := flag.String("name", "", "name of the database")
-	password := flag.String("password", "", "password")
-	port := flag.Int("port", 0, "port")
-	server := flag.String("server", "", "address")
-	user := flag.String("user", "", "user")
-	query := flag.String("query", "", "sql query")
-
-	// Verify that the required flags are passed.
-	seen := make(map[string]bool)
+	driver := flag.String("driver", "postgres", "sql driver, defaults to postgres (mssql|postgres)")
+	source := flag.String("source", "", "data source name")
+	query := flag.String("query", "-", "sql query")
 	flag.Parse()
-	flag.Visit(func(f *flag.Flag) { seen[f.Name] = true })
-	for _, r := range []string{"name", "password", "port", "server", "user", "query"} {
-		if !seen[r] {
-			errorf("missing required -%s flag", r)
-		}
+
+	// Make sure we got a valid parameter
+	if *source == "" {
+		errorf("missing required -source flag")
 	}
 
 	// Make sure that we got a valid driver.
-	if *driver != "postgres" {
+	if *driver != "mssql" && *driver != "postgres" {
 		errorf("%v is not a valid driver, postgres is the only supported driver for now", *driver)
 	}
 
 	// Connect to the server.
-	cstr := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", *server, *port, *user, *password, *name)
-	db, err := sql.Open(*driver, cstr)
+	db, err := sql.Open(*driver, *source)
 	if err != nil {
-		errorf("%v", err)
+		errorf("unable to open database connection using driver %s and source %s, errror: %v", *driver, *source, err)
 	}
 	defer db.Close()
+
+	// Ping the database.
+	if err = db.Ping(); err != nil {
+		errorf("can't ping database: %v", err)
+	}
 
 	// Accept query to be sent through stdin as well.
 	if *query == "-" {
@@ -68,7 +65,7 @@ func main() {
 	// Execute the query.
 	rows, err := db.Query(*query)
 	if err != nil {
-		errorf("%v\n", err)
+		errorf("coudln't execute query %s, error: %v\n", *query, err)
 	}
 
 	// Calculate number of columns for the returned rows.

@@ -24,7 +24,7 @@ qat -source "host=localhost port=5432 user=foo password=bar dbname=baz sslmode=d
 ### MSSQL
 
 ```sh
-qat -source "server=localhost;port=1433;user id=foo;password=bar" -query "SELECT 1"
+qat -driver mssql -source "server=localhost;port=1433;user id=foo;password=bar;database=foo" -query "SELECT 1"
 ```
 
 ## Usage

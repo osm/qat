@@ -25,7 +25,7 @@ func errorf(format string, args ...interface{}) {
 // main is the entry point of the program.
 func main() {
 	// Command line flags.
-	delimiter := flag.String("delimiter", ",", "delimeter")
+	delimiter := flag.String("delimiter", ",", "delimiter")
 	driver := flag.String("driver", "postgres", "sql driver, defaults to postgres (mssql|postgres)")
 	source := flag.String("source", "", "data source name")
 	query := flag.String("query", "-", "sql query")
